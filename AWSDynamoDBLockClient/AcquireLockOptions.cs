@@ -4,7 +4,6 @@ using BAMCIS.Util;
 using BAMCIS.Util.Concurrent;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 

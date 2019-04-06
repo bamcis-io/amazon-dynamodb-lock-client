@@ -181,7 +181,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// Checkes whether the lock table exists in DynamoDB
         /// </summary>
         /// <returns>True if the table exists, false otherwise</returns>
-        public async Task<bool> LockTableExists()
+        public async Task<bool> LockTableExistsAsync()
         {
             try
             {
@@ -203,11 +203,11 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// Throws a LockTableDoesNotExistException is the table does not exist.
         /// </summary>
         /// <returns></returns>
-        public async Task AssertLockTableExists()
+        public async Task AssertLockTableExistsAsync()
         {
             try
             {
-                bool Exists = await this.LockTableExists();
+                bool Exists = await this.LockTableExistsAsync();
 
                 if (!Exists)
                 {
@@ -229,7 +229,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// </summary>
         /// <param name="createDynamoDBTableOptions">The options used to create the lock table</param>
         /// <returns></returns>
-        public static async Task<CreateTableResponse> CreateLockTableInDynamoDB(CreateDynamoDBTableOptions createDynamoDBTableOptions)
+        public static async Task<CreateTableResponse> CreateLockTableInDynamoDBAsync(CreateDynamoDBTableOptions createDynamoDBTableOptions)
         {
             LockClientUtils.RequireNonNull(createDynamoDBTableOptions, "DynamoDB Create Table Options cannot be null.", "createDynamoDBTableOptions");
             LockClientUtils.RequireNonNull(createDynamoDBTableOptions.DynamoDBClient, "DynamoDB client object cannot be null.");
@@ -291,7 +291,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// <param name="key">The partition key representing the lock</param>
         /// <param name="sortKey">The sort key if present</param>
         /// <returns></returns>
-        public async Task<Optional<LockItem>> GetLock(string key, Optional<string> sortKey)
+        public async Task<Optional<LockItem>> GetLockAsync(string key, Optional<string> sortKey)
         {
             if (sortKey == null)
             {
@@ -303,7 +303,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
                 return Optional<LockItem>.Of(LocalLock);
             }
 
-            Optional<LockItem> LockItem = await this.GetLockFromDynamoDB(
+            Optional<LockItem> LockItem = await this.GetLockFromDynamoDBAsync(
                 (new GetLockOptions.GetLockOptionsBuilder(key)).WithSortKey(sortKey.OrElse(null)).WithDeleteLockOnRelease(false).Build()
             );
 
@@ -334,12 +334,12 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// <param name="options">The options such as the key, etc.</param>
         /// <returns>The LockItemm, or absent if it is not present. Not that the
         /// item can exist in the table even if it is released, as noted by IsReleased()</returns>
-        public async Task<Optional<LockItem>> GetLockFromDynamoDB(GetLockOptions options)
+        public async Task<Optional<LockItem>> GetLockFromDynamoDBAsync(GetLockOptions options)
         {
             LockClientUtils.RequireNonNull(options, "AcquireLockOptions cannot be null.", "options");
             LockClientUtils.RequireNonNullOrEmpty(options.PartitionKey, "Cannot lookup null or empty key.");
 
-            GetItemResponse Result = await this.ReadFromDynamoDB(options.PartitionKey, options.SortKey);
+            GetItemResponse Result = await this.ReadFromDynamoDBAsync(options.PartitionKey, options.SortKey);
             Dictionary<string, AttributeValue> Item = Result.Item;
 
             if (Item == null || !Item.Any())
@@ -459,7 +459,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
                 {
                     try
                     {
-                        Optional<LockItem> ExistingLock = await this.GetLockFromDynamoDB(GetLockOptions);
+                        Optional<LockItem> ExistingLock = await this.GetLockFromDynamoDBAsync(GetLockOptions);
 
                         if (options.AcquireOnlyIfLockAlreadyExists && !ExistingLock.IsPresent())
                         {
@@ -588,7 +588,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        public async Task<Optional<LockItem>> TryAcquireLock(AcquireLockOptions options)
+        public async Task<Optional<LockItem>> TryAcquireLockAsync(AcquireLockOptions options)
         {
             try
             {
@@ -963,7 +963,12 @@ namespace BAMCIS.AWSDynamoDBLockClient
         public void Close()
         {
             // release the locks before interrupting the heartbeat thread to avoid partially updated/stale locks
-            this.ReleaseAllLocks();
+            IEnumerable<Exception> Results = this.ReleaseAllLocks();
+
+            if (Results.Any())
+            {
+                throw new AggregateException(Results);
+            }
 
             if (this.BackgroundThread.IsPresent())
             {
@@ -1388,7 +1393,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// <param name="key"></param>
         /// <param name="sortKey"></param>
         /// <returns></returns>
-        private async Task<GetItemResponse> ReadFromDynamoDB(string key, Optional<string> sortKey)
+        private async Task<GetItemResponse> ReadFromDynamoDBAsync(string key, Optional<string> sortKey)
         {
             Dictionary<string, AttributeValue> DynamoDBKey = new Dictionary<string, AttributeValue>()
             {

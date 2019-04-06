@@ -30,7 +30,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// <summary>
         /// The DynamoDB client that will be the basis of the lock client
         /// </summary>
-        public AmazonDynamoDBClient DynamoDBClient { get; }
+        public IAmazonDynamoDB DynamoDBClient { get; }
 
         /// <summary>
         /// The table being operated on with locks
@@ -116,7 +116,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// <param name="namedThreadCreator"></param>
         /// <param name="holdLockOnServiceUnavailable"></param>
         private AmazonDynamoDBLockClientOptions(
-            AmazonDynamoDBClient dynamoDBClient, 
+            IAmazonDynamoDB dynamoDBClient, 
             string tableName, 
             string partitionKeyName,
             Optional<string> sortKeyName, 
@@ -155,7 +155,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         /// <param name="dynamoDBClient"></param>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        public static AmazonDynamoDBLockClientOptionsBuilder Builder(AmazonDynamoDBClient dynamoDBClient, string tableName)
+        public static AmazonDynamoDBLockClientOptionsBuilder Builder(IAmazonDynamoDB dynamoDBClient, string tableName)
         {
             return new AmazonDynamoDBLockClientOptionsBuilder(dynamoDBClient, tableName);
         }
@@ -237,7 +237,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
         {
             #region Private Fields
 
-            private AmazonDynamoDBClient DynamoDBClient;
+            private IAmazonDynamoDB DynamoDBClient;
             private string TableName;
             private string PartitionKeyName;
             private Optional<string> SortKeyName;
@@ -268,7 +268,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
             /// <param name="dynamoDBClient"></param>
             /// <param name="tableName"></param>
             internal AmazonDynamoDBLockClientOptionsBuilder(
-                AmazonDynamoDBClient dynamoDBClient,
+                IAmazonDynamoDB dynamoDBClient,
                 string tableName
             ) : this(dynamoDBClient, tableName, GenerateOwnerNameFromLocalhost()/*, NamedThreadCreator()*/)
             {
@@ -295,7 +295,7 @@ namespace BAMCIS.AWSDynamoDBLockClient
             /// <param name="ownerName"></param>
             /// <param name="namedThreadCreator"></param>
             internal AmazonDynamoDBLockClientOptionsBuilder(
-                AmazonDynamoDBClient dynamoDBClient, 
+                IAmazonDynamoDB dynamoDBClient, 
                 string tableName, 
                 string ownerName//, 
                 //Func<string, TaskFactory> namedThreadCreator
