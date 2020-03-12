@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+    <RootNamespace>Amazon.DynamoDBv2.Tests</RootNamespace>
+
+    <SignAssembly>true</SignAssembly>
+
+    <AssemblyOriginatorKeyFile>dynamodb-lock-client.tests.snk</AssemblyOriginatorKeyFile>
+
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
+    <PackageReference Include="Moq" Version="4.13.1" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\amazon-dynamodb-lock-client\dynamodb-lock-client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="Xunit.CollectionBehavior">
+      <_Parameter1>DisableTestParallelization</_Parameter1>
+      <_Parameter2>true</_Parameter2>
+    </AssemblyAttribute>  
+  </ItemGroup>
+
+</Project>
