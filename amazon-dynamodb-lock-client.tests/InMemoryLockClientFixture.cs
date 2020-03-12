@@ -34,12 +34,6 @@ namespace Amazon.DynamoDBv2.Tests
             Task.Run(() => this.DeleteTables()).Wait();
         }
 
-
-        public static string ByteBufferToString(MemoryStream buffer)
-        {
-            return ByteBufferToString(buffer, Encoding.Default);
-        }
-
         #endregion
 
         #region Private Methods
