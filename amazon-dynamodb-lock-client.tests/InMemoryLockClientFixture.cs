@@ -47,16 +47,7 @@ namespace Amazon.DynamoDBv2.Tests
         private async Task Setup()
         {
             AWSCredentials credentials = new BasicAWSCredentials(TABLE_NAME, "d");
-            string endpoint = Environment.GetEnvironmentVariable("dynamodb-local.endpoint");
-
-            /*
-            if (String.IsNullOrEmpty(endpoint))
-            {
-                throw new InvalidOperationException("The test was not launched with the dynamodb-local.endpoint environment variable set");
-            }
-            */
-
-            endpoint = "http://localhost:4567";
+            string endpoint = String.IsNullOrEmpty(Environment.GetEnvironmentVariable("dynamodb-local.endpoint")) ? "http://localhost:4567" : Environment.GetEnvironmentVariable("dynamodb-local.endpoint");
 
             AmazonDynamoDBConfig config = new AmazonDynamoDBConfig()
             {
@@ -66,8 +57,7 @@ namespace Amazon.DynamoDBv2.Tests
             this.idynamodb = new AmazonDynamoDBClient(credentials, config);
 
             await DeleteTables();
-            await CreateTables();
-            
+            await CreateTables();          
         }
 
         private async Task CreateTables()

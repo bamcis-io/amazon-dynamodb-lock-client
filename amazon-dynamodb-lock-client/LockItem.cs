@@ -62,7 +62,7 @@ namespace Amazon.DynamoDBv2
         /// <summary>
         /// The last time this lock was updated. Note that this will use LockClientUtils.MillisecondTime().
         /// 
-        /// TODO: Should be AtomicLong
+        /// Originally an AtomicLong
         /// </summary>
         public long LookupTime
         {
@@ -89,7 +89,7 @@ namespace Amazon.DynamoDBv2
         /// <summary>
         /// The amount of time that the client has this lock for, which can be kept up to date by calling SendHeartbeat().
         /// 
-        /// TODO: Should be AtomicLong
+        /// Originally an AtomicLong
         /// </summary>
         public long LeaseDuration
         {
