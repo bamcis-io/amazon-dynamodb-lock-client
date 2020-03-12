@@ -5,10 +5,10 @@
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.0</NetStandardImplicitPackageVersion>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net45' ">2.0.0</NetStandardImplicitPackageVersion>
     <RootNamespace>Amazon.DynamoDBv2</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.0.0-beta</Version>
     <Authors>Michael Haken</Authors>
     <Company>bamcis.io</Company>
-    <Description>A .NET implementation of the Amazon DynamoDB Lock Client Library for establishing distributed locks on a DDB table.</Description>
+    <Description>A .NET Core implementation of the Amazon DynamoDB Lock Client Library for establishing distributed locks on a DDB table.</Description>
     <Copyright>bamcis.io</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
@@ -19,7 +19,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>dynamodb-lock-client.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
-    <PackageIconUrl />
+    <PackageIcon></PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
