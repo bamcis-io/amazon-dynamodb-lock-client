@@ -62,8 +62,8 @@ namespace Amazon.DynamoDBv2.Tests
 
                 if (lockItem.IsPresent())
                 {
-                    Console.WriteLine("Acquired lock! If I die, my lock will expire in 1 econds.");
-                    Console.WriteLine("Otherwise, I will hold it until I topheartbeating.");
+                    Console.WriteLine("Acquired lock! If I die, my lock will expire in 1 second.");
+                    Console.WriteLine("Otherwise, I will hold it until I stop heartbeating.");
                     client.ReleaseLock(lockItem.Value);
                 }
                 else
@@ -161,6 +161,9 @@ Or you can set the environment variable `dynamodb-local.endpoint` to the endpoin
 I've turned down the concurrent threads in the `ConsistentLockDataStressTest` class from 50 to 10 via the `numOfThreads` variable, my test platform didn't handle trying to manage that many tasks well.
 
 ## Revision History
+
+### 1.0.1-beta
+Minor updates to LockClientUtils.
 
 ### 1.0.0-beta
 Initial beta release of the library.
