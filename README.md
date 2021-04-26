@@ -162,5 +162,8 @@ I've turned down the concurrent threads in the `ConsistentLockDataStressTest` cl
 
 ## Revision History
 
+### 1.0.1-beta
+Minor updates to LockClientUtils.
+
 ### 1.0.0-beta
 Initial beta release of the library.
