@@ -92,7 +92,7 @@ namespace Amazon.DynamoDBv2.Util
         /// <returns></returns>
         public static long MillisecondTime()
         {
-            return Stopwatch.GetTimestamp() / TimeSpan.TicksPerMillisecond;
+            return Stopwatch.GetTimestamp() / (Stopwatch.Frequency / 1000);
         }
 
         /// <summary>
