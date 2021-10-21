@@ -13,16 +13,18 @@ A common use case for this lock client is: let's say you have a distributed syst
 
 Another use case is leader election. If you only want one host to be the leader, then this lock client is a great way to pick one. When the leader fails, it will fail over to another host within a customizable leaseDuration that you set.
 
+You can lock on anything arbitrary, this isn't necessarily for creating locks on items/rows in DynamoDB, you might want to lock on an S3 object, on an entire RDS databases, or on a unit of work. It's also important to note that these are **advisory** locks, meaning that the client doesn't enforce the lock, your software has to use the client to determine whether or not you can take action. It's still entirely possible for a client to ignore the lock and do something.
+
 ## Getting Started
 To use the Amazon DynamoDB Lock Client, declare a dependency on the latest version of this artifact in your csproj file or add it through NuGet.
 
 ```xml
 <ItemGroup>
-    <PackageReference Include="dynamodb-lock-client" Version="1.0.0" />
+    <PackageReference Include="dynamodb-lock-client" Version="1.0.1-beta" />
 </ItemGroup>
 ```
 
-Then, you need to set up a DynamoDB table that has a hash key on a key with the name key. For your convenience, there is a static method in the AmazonDynamoDBLockClient class called `createLockTableInDynamoDB` that you can use to set up your table, but it is also possible to set up the table in the AWS Console. The table should be created in advance, since it takes a couple minutes for DynamoDB to provision your table for you. The `AmazonDynamoDBLockClient` has comments that fully explain how the library works. Here is some example code to get you started:
+Then, you need to set up a DynamoDB table that has a hash key on a key with the name key. For your convenience, there is a static method in the `AmazonDynamoDBLockClient` class called `createLockTableInDynamoDB` that you can use to set up your table, but it is also possible to set up the table in the AWS Console. The table should be created in advance, since it takes a couple minutes for DynamoDB to provision your table for you. The `AmazonDynamoDBLockClient` has comments that fully explain how the library works. Here is some example code to get you started:
 
 ```csharp
 using Amazon.Runtime;
@@ -40,8 +42,8 @@ namespace Amazon.DynamoDBv2.Tests
     {
         public async Task UsageExample()
         {
-            // Inject client configuration to the builder like the endpoint and igningregion
-            IAmazonDynamoDB dynamodb = new AmazonDynamoDBClient(new BasicAWSCredential("a", "a"), new AmazonDynamoDBConfig()
+            // Inject client configuration to the builder like the endpoint and signing region
+            IAmazonDynamoDB dynamodbClient = new AmazonDynamoDBClient(new BasicAWSCredential("a", "a"), new AmazonDynamoDBConfig()
             {
                 ServiceURL = "http://localhost:4567"
             });
@@ -50,12 +52,26 @@ namespace Amazon.DynamoDBv2.Tests
             bool createHeartbeatBackgroundThread = true;
   
             // Build the lock client
-            IAmazonDynamoDBLockClient client = new AmazonDynamoDBLockClientnewAmazonDynamoDBLockClientOptions(dynamodb, "lockTable") { TimeUnit TimeUnit.SECONDS, LeaseDuration = 10, HeartbeatPeriod = ,CreateHeartbeatBackgroundThread = createHeartbeatBackgroundThread });
+            IAmazonDynamoDBLockClient client = new AmazonDynamoDBLockClient(
+              new AmazonDynamoDBLockClientOptions(dynamodbClient, "lockTable") 
+              { 
+                TimeUnit TimeUnit.SECONDS, 
+                LeaseDuration = 10, 
+                HeartbeatPeriod = ,
+                CreateHeartbeatBackgroundThread = createHeartbeatBackgroundThread 
+              }
+            );
 
             try
             {
                 // Create the table
-                await client.CreateLockTableInDynamoDBAsync(newCreateDynamoDBTableOptionsdynamodb, "lockTable"));
+                await client.CreateLockTableInDynamoDBAsync(new CreateDynamoDBTableOptions(dynamodbClient), "lockTable"));
+                
+                // This sleeps for 5 minutes in order to wait for the DDB table to be created
+                // This is just for testing purposes, in your software, don't create the 
+                // table as part of your code, create it ahead of time before you run the 
+                // lock client
+                Thread.Sleep(300000);
 
                 // Try to acquire a lock on the partition key "Moe"
                 Optional<LockItem> lockItem = await client.TryAcquireLockAsyncnewAcquireLockOptions("Moe"));
@@ -73,7 +89,7 @@ namespace Amazon.DynamoDBv2.Tests
             }
             finally
             {
-                await dynamodb.DeleteTableAsync("lockTable");
+                await dynamodbClient.DeleteTableAsync("lockTable");
                 client.Close();
             }
         }
@@ -86,7 +102,7 @@ namespace Amazon.DynamoDBv2.Tests
 When you call the constructor `AmazonDynamoDBLockClient`, you can specify `CeateHeartbeatBackgroundThread = true` like in the above example, and it will spawn a background thread that continually updates the record version number on your locks to prevent them from expiring (it does this by calling the `SendHeartbeat()` method in the lock client). This will ensure that as long as your process is running, your locks will not expire until you call `ReleaseLock()` or `lockItem.Close()`.
 
 ### Acquire Lock with Timeout
-You can acquire a lock via two different methods: `AcquireLockAync` or `TryAcquireLockAsync`. The difference between the two methods is that `TryAcquireLockAsync` will return null if the lock was not acquired, whereas `AcquireLockAsync` will throw a `LockNotGrantedException`. Both methods provide optional parameters where you can specify an additional timeout for acquiring the lock. Then they will try to acquire the lock for that amount of time before giving up. They do this by continually polling DynamoDB according to an interval you set up. Remember that `AcquireLockAsync`/`TryAcquireLockAsync` will always poll DynamoDB for at least the `LeaseDuration` period before giving up, because this is the only way it will be able to expire stale locks.
+You can acquire a lock via two different methods: `AcquireLockAync` or `TryAcquireLockAsync`. The difference between the two methods is that `TryAcquireLockAsync` will return `null` if the lock was not acquired, whereas `AcquireLockAsync` will throw a `LockNotGrantedException`. Both methods provide optional parameters where you can specify an additional timeout for acquiring the lock. Then they will try to acquire the lock for that amount of time before giving up. They do this by continually polling DynamoDB according to an interval you set up. Remember that `AcquireLockAsync`/`TryAcquireLockAsync` will always poll DynamoDB for at least the `LeaseDuration` period before giving up, because this is the only way it will be able to expire stale locks.
 
 This example will poll DynamoDB every second for 5 additional seconds (beyond the lease duration period), trying to acquire a lock:
 
@@ -139,7 +155,7 @@ LockItem lock = await lockClient.GetLockAsync("Moe");
 
 ## How We Handle Clock Skew
 
-The lock client never stores absolute times in DynamoDB -- only the relative "lease duration" time is stored in DynamoDB. The way locks are expired is that a call to acquireLock reads in the current lock, checks the `RecordVersionNumber` of the lock (which is a GUID) and starts a timer. If the lock still has the same GUID after the lease duration time has passed, the client will determine that the lock is stale and expire it. What this means is that, even if two different machines disagree about what time it is, they will still avoid clobbering each other's locks.
+The lock client never stores absolute times in DynamoDB -- only the relative "lease duration" time is stored in DynamoDB. The way locks are expired is that a call to `acquireLockAsync` reads in the current lock, checks the `RecordVersionNumber` of the lock (which is a GUID) and starts a timer. If the lock still has the same GUID after the lease duration time has passed, the client will determine that the lock is stale and expire it. What this means is that, even if two different machines disagree about what time it is, they will still avoid clobbering each other's locks.
 
 ## Testing the DynamoDB Locking Client
 To run all integration tests for the DynamoDB Lock client, issue the following dotnet command:
@@ -156,7 +172,7 @@ Make sure the `endpoint` variable is set to:
 
     endpoint = "http://localhost:4567";
 
-Or you can set the environment variable `dynamodb-local.endpoint` to the endpoint, which will set the endpoint variable.
+Or you can set the environment variable `dynamodb-local.endpoint` to the endpoint url, which will set the endpoint variable.
 
 I've turned down the concurrent threads in the `ConsistentLockDataStressTest` class from 50 to 10 via the `numOfThreads` variable, my test platform didn't handle trying to manage that many tasks well.
 
